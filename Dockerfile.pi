@@ -1,0 +1,32 @@
+FROM node:24-bookworm-slim
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends bash ca-certificates git ripgrep make \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install pi globally, then strip the Node package managers. pi runs on `node`
+# alone; a sandboxed agent has no business fetching network packages. Removing
+# npm/npx/corepack also drops npm's bundled, vulnerable undici (CVE-2026-12151).
+RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent \
+  && rm -rf /usr/local/lib/node_modules/npm \
+            /usr/local/lib/node_modules/corepack \
+            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+            /root/.npm
+
+# Go toolchain + golangci-lint, version-matched to motoko's pinned CI images
+# (golang:1.23, golangci-lint v2.1.6) so the agent builds/tests/lints directly
+# without discovering or downloading a toolchain. NOTE: motoko's own Makefile
+# runs these *inside docker*; this sandbox has none, so the agent must call
+# `go` / `golangci-lint` directly. GOTOOLCHAIN=local blocks surprise downloads.
+COPY --from=golang:1.23-bookworm /usr/local/go /usr/local/go
+COPY --from=golangci/golangci-lint:v2.1.6 /usr/bin/golangci-lint /usr/local/bin/golangci-lint
+ENV PATH=/usr/local/go/bin:/home/node/go/bin:$PATH \
+    GOTOOLCHAIN=local
+
+# node:24 ships a non-root `node` user (uid/gid 1000). Pre-create its agent
+# home so the named volume inherits node ownership on first mount.
+RUN mkdir -p /home/node/.pi/agent && chown -R node:node /home/node/.pi
+
+USER node
+WORKDIR /workspace
+ENTRYPOINT ["pi"]

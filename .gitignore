@@ -1,0 +1,4 @@
+# Secrets — never commit. Real key lives here; .env.example is the template.
+.env
+.env.*
+!.env.example
