@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "pi-crew's six bundled agents hardcode openai-codex/* models in their frontmatter and pi-crew",
+    "fails a spawn outright when a configured model does not resolve exactly, so every bundled",
+    "agent needs an override regardless of which provider is active. The entrypoint patches",
+    "model/thinking here on every run from PI_PROVIDER/PI_MODEL/PI_THINKING.",
+    "The five agents defined in agents/*.md omit `model` on purpose and inherit the current one."
+  ],
+  "agents": {
+    "worker": {},
+    "scout": {},
+    "planner": {},
+    "oracle": {},
+    "code-reviewer": {},
+    "quality-reviewer": {}
+  }
+}
