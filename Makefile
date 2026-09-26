@@ -427,6 +427,10 @@ versions:
 		model=$$(jq -r .defaultModel $$PI_CODING_AGENT_DIR/settings.json); \
 		echo "model   $$provider/$$model"; \
 		echo "mode    $${PI_MODE:-solo} (packages: $$(jq -c .packages $$PI_CODING_AGENT_DIR/settings.json))"; \
+		printf "thinking principal=%s" "$$(jq -r ".defaultThinkingLevel // \"pi-default\"" $$PI_CODING_AGENT_DIR/settings.json)"; \
+		if [ "$${PI_MODE:-solo}" = crew ]; then for f in $$PI_CODING_AGENT_DIR/agents/*.md; do a=$$(basename "$$f" .md); \
+			t=$$(jq -r --arg a "$$a" ".agents[\$$a].thinking // empty" $$PI_CODING_AGENT_DIR/pi-crew.json); \
+			printf " %s=%s" "$$a" "$${t:-$$(sed -n "s/^thinking: *//p" "$$f")}"; done; fi; echo; \
 		keyref=$$(jq -r ".providers[\"$$provider\"].apiKey // empty" $$PI_CODING_AGENT_DIR/models.json); \
 		keyvar=$${keyref#\$$}; \
 		if [ -n "$$keyvar" ] && [ -n "$$(printenv "$$keyvar")" ]; then echo "key     present (value not shown)"; \

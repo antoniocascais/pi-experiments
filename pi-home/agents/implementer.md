@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Implements a scoped change as a minimal, verified diff and reports with evidence. The only agent permitted to write source.
-thinking: high
+thinking: medium
 tools: read, grep, find, ls, bash, edit, write
 ---
 

@@ -91,7 +91,7 @@ fi
 
 # --- patch settings.json for this run -----------------------------------------
 TOOLS_SOLO='["read","grep","find","ls","bash","edit","write"]'
-TOOLS_CREW='["read","grep","find","ls","bash","edit"]'
+TOOLS_CREW='["read","grep","find","ls","bash"]'
 [ "$PI_MODE" = "solo" ] && tools="$TOOLS_SOLO" || tools="$TOOLS_CREW"
 
 tmp=$(mktemp "$(dirname "$SETTINGS_FILE")/.tmp.XXXXXX")
@@ -117,6 +117,26 @@ if [ -e "$PICREW_FILE" ]; then
     jq --arg th "$PI_THINKING" '(.agents[]?) |= (.thinking = $th)' "$PICREW_FILE" > "$tmp"
     mv "$tmp" "$PICREW_FILE"
   fi
+
+  # PI_THINKING_<AGENT> beats the agent's frontmatter default; applied after the loops above
+  # so our own agents gain no `model` key and keep inheriting the principal's.
+  for var in $(env | sed -n 's/^\(PI_THINKING_[A-Z0-9_]*\)=.*/\1/p'); do
+    level=$(printenv "$var")
+    [ -n "$level" ] || continue
+    case "$level" in
+      off|minimal|low|medium|high|xhigh|max) ;;
+      *) echo "pi-experiments: $var must be off|minimal|low|medium|high|xhigh|max (got '$level')" >&2; exit 1 ;;
+    esac
+    agent=$(printf '%s' "${var#PI_THINKING_}" | tr 'A-Z_' 'a-z-')
+    # A typo would otherwise be dropped by pi-crew with only a crew_list warning.
+    if [ ! -e "${PI_CODING_AGENT_DIR}/agents/${agent}.md" ] \
+       && ! jq -e --arg a "$agent" '.agents | has($a)' "$PICREW_FILE" >/dev/null; then
+      echo "pi-experiments: $var names no crew agent '$agent'" >&2; exit 1
+    fi
+    tmp=$(mktemp "$(dirname "$PICREW_FILE")/.tmp.XXXXXX")
+    jq --arg a "$agent" --arg th "$level" '.agents[$a].thinking = $th' "$PICREW_FILE" > "$tmp"
+    mv "$tmp" "$PICREW_FILE"
+  done
 fi
 
 # --- sanitise only the api key the selected provider needs --------------------

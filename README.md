@@ -50,7 +50,8 @@ Everything is set through the env file (`ENV_FILE`, default `.env`), copied from
 | --- | --- | --- |
 | `PI_PROVIDER` | yes | provider key from `pi-home/models.json` |
 | `PI_MODEL` | yes | model id offered by that provider |
-| `PI_THINKING` | no | thinking level, e.g. `low`/`medium`/`high` |
+| `PI_THINKING` | no | thinking level (`off`…`max`) of the solo agent / crew principal |
+| `PI_THINKING_<AGENT>` | no | crew only: per-agent level, e.g. `PI_THINKING_ADVERSARIAL_REVIEWER=xhigh`; unset keeps the agent's default (`implementer` medium, the rest high) |
 | `PI_MODE` | no | `solo` (default) or `crew` |
 | `LLMBASE_API_KEY` | if using `llmbase` | key for `https://api.llmbase.ai/v1` |
 | `CORTECS_API_KEY` | if using `cortecs` | key for `https://api.cortecs.ai/v1` |
@@ -98,10 +99,12 @@ hint instead of silently starting stale config.
 
 - **solo** (default): one implementer session with `read`/`grep`/`find`/`ls`/`bash`/`edit`/`write`.
   Persona in `pi-home/AGENTS.solo.md`. No `pi-crew` extension loaded.
-- **crew**: a principal (no `write`, `pi-crew` loaded) delegates to `worker`/`scout`/`planner`/
-  `oracle`/`code-reviewer`/`quality-reviewer` plus the repo's own `implementer`/`researcher`/
-  `reviewer`/`adversarial-reviewer`/`devsec-reviewer` agents, with a two-round review loop and a
-  dated notes ledger under `$NOTES_ROOT`. Law in `pi-home/AGENTS.crew.md`. Interactive only
+- **crew**: a principal (no `write`/`edit`, `pi-crew` loaded) delegates to `worker`/`scout`/
+  `planner`/`oracle`/`code-reviewer`/`quality-reviewer` plus the repo's own `implementer`/
+  `researcher`/`reviewer`/`adversarial-reviewer`/`devsec-reviewer` agents. Every change goes
+  through the implementer: the principal reviews it against the task first, then reviewer +
+  adversarial reviewer check correctness, the principal triages their findings into one fix
+  brief, and the same pair re-reviews once. A dated notes ledger lives under `$NOTES_ROOT`. Law in `pi-home/AGENTS.crew.md`. Interactive only
   (`make pi`): pi-crew subagents are async and die when a headless `pi -p` exits, so
   `make run TASK=` refuses crew mode.
 
