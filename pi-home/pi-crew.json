@@ -4,7 +4,7 @@
     "fails a spawn outright when a configured model does not resolve exactly, so every bundled",
     "agent needs an override regardless of which provider is active. The entrypoint patches",
     "model/thinking here on every run from PI_PROVIDER/PI_MODEL/PI_THINKING, and adds a",
-    "`thinking` entry for any agent named by a PI_THINKING_<AGENT> env var.",
+    "`thinking` / `model` entry for any agent named by a PI_THINKING_<AGENT> / PI_MODEL_<AGENT> env var.",
     "The five agents defined in agents/*.md omit `model` on purpose and inherit the current one."
   ],
   "agents": {

@@ -52,11 +52,13 @@ Everything is set through the env file (`ENV_FILE`, default `.env`), copied from
 | `PI_MODEL` | yes | model id offered by that provider |
 | `PI_THINKING` | no | thinking level (`off`…`max`) of the solo agent / crew principal |
 | `PI_THINKING_<AGENT>` | no | crew only: per-agent level, e.g. `PI_THINKING_ADVERSARIAL_REVIEWER=xhigh`; unset keeps the agent's default (`implementer` medium, the rest high) |
+| `PI_MODEL_<AGENT>` | no | crew only: per-agent model id from the same `PI_PROVIDER`, e.g. `PI_MODEL_REVIEWER=xiaomi/mimo-v2.6-pro`; unset inherits `PI_MODEL` |
 | `PI_MODE` | no | `solo` (default) or `crew` |
 | `LLMBASE_API_KEY` | if using `llmbase` | key for `https://api.llmbase.ai/v1` |
 | `CORTECS_API_KEY` | if using `cortecs` | key for `https://api.cortecs.ai/v1` |
+| `OPENROUTER_API_KEY` | if using `openrouter` | key for `https://openrouter.ai/api/v1` |
 
-Two providers ship out of the box:
+Three providers ship out of the box:
 
 ```bash
 # llmbase
@@ -68,7 +70,26 @@ LLMBASE_API_KEY=...
 PI_PROVIDER=cortecs
 PI_MODEL=deepseek-v4.1-flash
 CORTECS_API_KEY=...
+
+# openrouter, crew: GLM principal, DeepSeek implementer, MiMo reviewers
+PI_PROVIDER=openrouter
+PI_MODEL=z-ai/glm-5.3
+PI_THINKING=high
+PI_MODE=crew
+PI_MODEL_IMPLEMENTER=deepseek/deepseek-v4.1-flash
+PI_MODEL_REVIEWER=xiaomi/mimo-v2.6-pro
+PI_MODEL_ADVERSARIAL_REVIEWER=xiaomi/mimo-v2.6-pro
+OPENROUTER_API_KEY=...
 ```
+
+The `openrouter` models carry `compat.openRouterRouting` (`only` + `allow_fallbacks: false` +
+`zdr: true`) in `pi-home/models.json`, sent as OpenRouter's
+[`provider`](https://openrouter.ai/docs/guides/routing/provider-selection) routing object — a
+request fails rather than silently landing on a different upstream or quantization, or on an
+endpoint outside OpenRouter's zero-data-retention list. Both pinned upstreams are US-hosted. Pinning is
+per model id, so every agent on that model shares the route. Not every upstream honours every
+thinking level: an endpoint without `reasoning_effort` support (MiMo on DeepInfra, at the time
+of writing) only switches reasoning on or off.
 
 The entrypoint fails fast if `PI_PROVIDER`/`PI_MODEL` are missing or don't
 resolve in `models.json`. Only the selected provider's key needs to be set;

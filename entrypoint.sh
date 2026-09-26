@@ -118,23 +118,40 @@ if [ -e "$PICREW_FILE" ]; then
     mv "$tmp" "$PICREW_FILE"
   fi
 
-  # PI_THINKING_<AGENT> beats the agent's frontmatter default; applied after the loops above
-  # so our own agents gain no `model` key and keep inheriting the principal's.
-  for var in $(env | sed -n 's/^\(PI_THINKING_[A-Z0-9_]*\)=.*/\1/p'); do
-    level=$(printenv "$var")
-    [ -n "$level" ] || continue
-    case "$level" in
-      off|minimal|low|medium|high|xhigh|max) ;;
-      *) echo "pi-experiments: $var must be off|minimal|low|medium|high|xhigh|max (got '$level')" >&2; exit 1 ;;
+  # PI_THINKING_<AGENT> / PI_MODEL_<AGENT> beat the agent's defaults; applied after the loops
+  # above so an agent without its own entry gains no `model` key and keeps inheriting the principal's.
+  for var in $(env | sed -En 's/^(PI_(THINKING|MODEL)_[A-Z0-9_]*)=.*/\1/p'); do
+    value=$(printenv "$var")
+    [ -n "$value" ] || continue
+    case "$var" in
+      PI_THINKING_*)
+        field=thinking
+        agent=${var#PI_THINKING_}
+        case "$value" in
+          off|minimal|low|medium|high|xhigh|max) ;;
+          *) echo "pi-experiments: $var must be off|minimal|low|medium|high|xhigh|max (got '$value')" >&2; exit 1 ;;
+        esac
+        ;;
+      *)
+        field=model
+        agent=${var#PI_MODEL_}
+        # Same provider as the principal: one key, one validation, and an id like
+        # z-ai/glm-5.3 needs no second slash-separated provider prefix to parse.
+        if ! jq -e --arg p "$PI_PROVIDER" --arg m "$value" \
+              '.providers[$p].models[]? | select(.id == $m)' "$MODELS_FILE" >/dev/null; then
+          echo "pi-experiments: $var: model '$value' is not offered by provider '$PI_PROVIDER' in models.json" >&2; exit 1
+        fi
+        value="${PI_PROVIDER}/${value}"
+        ;;
     esac
-    agent=$(printf '%s' "${var#PI_THINKING_}" | tr 'A-Z_' 'a-z-')
+    agent=$(printf '%s' "$agent" | tr 'A-Z_' 'a-z-')
     # A typo would otherwise be dropped by pi-crew with only a crew_list warning.
     if [ ! -e "${PI_CODING_AGENT_DIR}/agents/${agent}.md" ] \
        && ! jq -e --arg a "$agent" '.agents | has($a)' "$PICREW_FILE" >/dev/null; then
       echo "pi-experiments: $var names no crew agent '$agent'" >&2; exit 1
     fi
     tmp=$(mktemp "$(dirname "$PICREW_FILE")/.tmp.XXXXXX")
-    jq --arg a "$agent" --arg th "$level" '.agents[$a].thinking = $th' "$PICREW_FILE" > "$tmp"
+    jq --arg a "$agent" --arg f "$field" --arg v "$value" '.agents[$a][$f] = $v' "$PICREW_FILE" > "$tmp"
     mv "$tmp" "$PICREW_FILE"
   done
 fi
