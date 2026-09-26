@@ -1,0 +1,75 @@
+{
+  "providers": {
+    "llmbase": {
+      "baseUrl": "https://api.llmbase.ai/v1",
+      "api": "openai-completions",
+      "apiKey": "$LLMBASE_API_KEY",
+      "compat": {
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": true
+      },
+      "models": [
+        {
+          "id": "minimax/minimax-m3",
+          "reasoning": true,
+          "contextWindow": 1048576,
+          "maxTokens": 64000,
+          "thinkingLevelMap": {
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "high"
+          }
+        },
+        {
+          "id": "z-ai/glm-5.2",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "max"
+          }
+        }
+      ]
+    },
+    "cortecs": {
+      "name": "Cortecs",
+      "baseUrl": "https://api.cortecs.ai/v1",
+      "api": "openai-completions",
+      "apiKey": "$CORTECS_API_KEY",
+      "models": [
+        {
+          "id": "deepseek-v4.1-flash",
+          "name": "DeepSeek V4 Flash latest (Cortecs / Tensorix)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": null,
+            "max": null
+          },
+          "compat": {
+            "supportsReasoningEffort": true
+          },
+          "input": ["text"],
+          "contextWindow": 1048576,
+          "maxTokens": 64000,
+          "cost": {
+            "input": 0.449,
+            "output": 1.346,
+            "cacheRead": 0.117,
+            "cacheWrite": 0
+          },
+          "samplingParams": {
+            "allowed_providers": ["tensorix"]
+          }
+        }
+      ]
+    }
+  }
+}

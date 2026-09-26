@@ -2,3 +2,9 @@
 .env
 .env.*
 !.env.example
+
+# `make export` output.
+*.bundle
+
+# `make export-logs` output: full transcripts.
+pi-logs*.tar.gz

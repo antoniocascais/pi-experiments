@@ -1,0 +1,10 @@
+# Deny everything, then re-allow exactly what the build needs. An allowlist is
+# the only way to guarantee a stray file -- a key, a dump, a clone -- never
+# lands in an image layer. .env matches the leading `*` and is deliberately
+# never re-allowed: the API key reaches the container at run time via
+# --env-file, never through the build context.
+*
+!entrypoint.sh
+!pi-home/
+!notes-skel/
+!BOM.md
